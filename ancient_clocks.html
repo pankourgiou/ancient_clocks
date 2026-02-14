@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Egyptian 24-Hour Clocks</title>
+<style>
+    body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: radial-gradient(circle at center, #050505, #000000);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        gap: 28px;
+        width: 95%;
+        max-width: 1800px;
+    }
+
+    canvas {
+        background: black;
+        border-radius: 24px;
+        box-shadow: 0 0 35px rgba(255,255,255,0.15);
+        transition: 0.4s;
+    }
+
+    canvas:hover {
+        transform: scale(1.05);
+    }
+</style>
+</head>
+
+<body>
+<div class="grid" id="grid"></div>
+
+<script>
+const baseSymbols = [
+"𓀀","𓀁","𓀂","𓀃","𓀄","𓀅","𓀆","𓀇",
+"𓀈","𓀉","𓀊","𓀋","𓀌","𓀍","𓀎","𓀏",
+"𓀐","𓀑","𓀒","𓀓","𓀔","𓀕","𓀖","𓀗"
+];
+
+// 10 DIFFERENT COLOR THEMES
+const themes = [
+{bg:"#000000", face:"gold", hour:"gold", minute:"white", second:"red", marker:"gold", center:"gold"},
+{bg:"#001f3f", face:"cyan", hour:"cyan", minute:"white", second:"magenta", marker:"cyan", center:"cyan"},
+{bg:"#1a0000", face:"orange", hour:"orange", minute:"white", second:"yellow", marker:"orange", center:"orange"},
+{bg:"#002b00", face:"lime", hour:"lime", minute:"white", second:"red", marker:"lime", center:"lime"},
+{bg:"#240024", face:"magenta", hour:"magenta", minute:"white", second:"cyan", marker:"magenta", center:"magenta"},
+{bg:"#101010", face:"silver", hour:"white", minute:"lightblue", second:"red", marker:"silver", center:"white"},
+{bg:"#000022", face:"gold", hour:"gold", minute:"white", second:"red", marker:"gold", center:"gold"},
+{bg:"#1a0000", face:"red", hour:"red", minute:"orange", second:"yellow", marker:"red", center:"red"},
+{bg:"#3b2400", face:"tan", hour:"tan", minute:"white", second:"orange", marker:"tan", center:"tan"},
+{bg:"#001a33", face:"lightblue", hour:"lightblue", minute:"white", second:"cyan", marker:"lightblue", center:"lightblue"}
+];
+
+class EgyptianClock {
+    constructor(container, theme){
+        this.size = 360;
+        this.center = this.size/2;
+        this.radius = this.size*0.45;
+        this.theme = theme;
+
+        this.canvas = document.createElement("canvas");
+        this.canvas.width = this.canvas.height = this.size;
+        this.canvas.style.background = theme.bg;
+        container.appendChild(this.canvas);
+        this.ctx = this.canvas.getContext("2d");
+
+        this.symbols = [...baseSymbols].sort(()=>Math.random()-0.5);
+    }
+
+    draw(){
+        const ctx = this.ctx;
+        ctx.clearRect(0,0,this.size,this.size);
+
+        ctx.save();
+
+        ctx.strokeStyle = this.theme.face;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(this.center,this.center,this.radius,0,Math.PI*2);
+        ctx.stroke();
+
+        ctx.fillStyle = this.theme.marker;
+        ctx.font = "22px Segoe UI Historic";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        for(let i=0;i<24;i++){
+            let angle = Math.PI/2 - (i*2*Math.PI/24);
+            let x = this.center + Math.cos(angle)*this.radius*0.85;
+            let y = this.center - Math.sin(angle)*this.radius*0.85;
+            ctx.fillText(this.symbols[i],x,y);
+        }
+
+        const now = new Date();
+
+        let hour = now.getHours();
+        let minute = now.getMinutes();
+        let second = now.getSeconds();
+
+        const hourAngle = Math.PI/2 - ((hour+minute/60+second/3600)*(2*Math.PI/24));
+        const minAngle = Math.PI/2 - ((minute+second/60)*(2*Math.PI/60));
+        const secAngle = Math.PI/2 - (second*(2*Math.PI/60));
+
+        this.drawHand(hourAngle,this.radius*0.5,6,this.theme.hour);
+        this.drawHand(minAngle,this.radius*0.7,3,this.theme.minute);
+        this.drawHand(secAngle,this.radius*0.85,2,this.theme.second);
+
+        ctx.fillStyle = this.theme.center;
+        ctx.font = "64px Segoe UI Historic";
+        ctx.fillText(this.symbols[hour],this.center,this.center);
+
+        ctx.restore();
+    }
+
+    drawHand(angle,length,width,color){
+        const ctx = this.ctx;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(this.center,this.center);
+        ctx.lineTo(
+            this.center + Math.cos(angle)*length,
+            this.center - Math.sin(angle)*length
+        );
+        ctx.stroke();
+    }
+}
+
+const grid = document.getElementById("grid");
+const clocks = [];
+
+for(let i=0;i<10;i++){
+    const c = new EgyptianClock(grid,themes[i]);
+    clocks.push(c);
+}
+
+function animate(){
+    clocks.forEach(c=>c.draw());
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
